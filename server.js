@@ -32,6 +32,8 @@ if (process.env.NODE_ENV === 'production') {
 
 const userRoutes = require('./api/user/user.routes')
 const authRoutes = require('./api/auth/auth.routes')
+const postsRoutes = require('./api/posts/posts.routes')
+
 
 const { connectSockets } = require('./services/socket.service')
 
@@ -48,6 +50,7 @@ app.get('/api/setup-session', (req, res) => {
 
 
 app.use('/api/user', userRoutes)
+app.use('/api/posts', postsRoutes)
 app.use('/api/auth', authRoutes)
 
 connectSockets(http, session)

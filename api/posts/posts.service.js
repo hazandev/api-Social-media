@@ -5,8 +5,8 @@ const ObjectId = require('mongodb').ObjectId
 
 module.exports = {
     query,
+    getByIdUser,
     getById,
-    getByMail,
     remove,
     update,
     add
@@ -31,32 +31,34 @@ async function query(filterBy = {}) {
     }
 }
 
-async function getById(userId) {
+async function getByIdUser(userId) {
     try {
-        const collection = await dbService.getCollection('user')
-        const user = await collection.findOne({ '_id': ObjectId(userId) })
-        delete user.password
-        return user
+        const collection = await dbService.getCollection('posts')
+        const userPosts = await collection.find({ 'userId': ObjectId(userId) }) 
+        return userPosts
     } catch (err) {
         logger.error(`while finding user ${userId}`, err)
         throw err
     }
 }
-async function getByMail(mail) {
+
+async function getById(postId) {
     try {
-        const collection = await dbService.getCollection('user')
-        const user = await collection.findOne({ mail })
-        return user
+        const collection = await dbService.getCollection('posts');
+        const post = await collection.findOne({ '_id': ObjectId(postId) });
+        return post;
     } catch (err) {
-        logger.error(`while finding user ${mail}`, err)
+        logger.error(`while finding post ${postId}`, err)
         throw err
     }
 }
 
-async function remove(userId) {
+
+
+async function remove(postId) {
     try {
-        const collection = await dbService.getCollection('user')
-        await collection.deleteOne({ '_id': ObjectId(userId) })
+        const collection = await dbService.getCollection('posts')
+        await collection.deleteOne({ '_id': ObjectId(postId) })
     } catch (err) {
         logger.error(`cannot remove user ${userId}`, err)
         throw err
@@ -92,28 +94,19 @@ async function update(user) {
     }
 }
 
-async function add(user) {
+async function add(post) {
     try {
         // peek only updatable fields!
-        const userToAdd = {
-            username: user.username,
-            password: user.password,
-            mail: user.mail,
-            profilePicture: '',
-            coverPicture: '',
-            followers: [],
-            followings: [],
-            isAdmin: false,
-            desc: '',
-            city: '',
-            from: '',
-            relationship: 'signal',
-            timestamp: new Date(),
-            isActive: true
+        const postToAdd = {
+            userId: post.userId,
+            desc: post.desc,
+            img: post.img,
+            likes: [],
+            timestamp: new Date.now()
         }
-        const collection = await dbService.getCollection('user')
-        await collection.insertOne(userToAdd)
-        return userToAdd
+        const collection = await dbService.getCollection('posts')
+        await collection.insertOne(postToAdd)
+        return postToAdd
     } catch (err) {
         logger.error('cannot insert user', err)
         throw err

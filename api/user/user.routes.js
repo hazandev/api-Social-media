@@ -1,6 +1,6 @@
 const express = require('express')
 const {requireAuth, requireAdmin} = require('../../middlewares/requireAuth.middleware')
-const {getUser, getUsers, deleteUser, updateUser, freezeUser, followUser} = require('./user.controller')
+const {getUser, getUsers, deleteUser, updateUser, freezeUser, followUser, unfollowUser} = require('./user.controller')
 const router = express.Router()
 
 // middleware that is specific to this router
@@ -12,7 +12,9 @@ router.put('/:id',requireAuth,  updateUser)
 router.delete('/:id',  requireAuth, freezeUser)
 
 
-router.put('/:id/follow', followUser)
+router.put('/:id/follow', followUser);
+router.put('/:id/unfollow', unfollowUser)
+
 
 // //admin route
 // router.delete('/admin/:id',  requireAuth, requireAdmin, deleteUser)
