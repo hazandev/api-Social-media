@@ -4,37 +4,21 @@ const dbService = require('../../services/db.service')
 const ObjectId = require('mongodb').ObjectId
 
 module.exports = {
-    query,
     getByIdUser,
     getById,
     remove,
     update,
-    add
+    add,
+    addLike,
+    removeLike,
 }
 
-async function query(filterBy = {}) {
-    // const criteria = _buildCriteria(filterBy)
-    try {
-        const collection = await dbService.getCollection('user')
-        var users = await collection.find({ 'isActive': true }).toArray()
-        users = users.map(user => {
-            delete user.password
-            user.createdAt = ObjectId(user._id).getTimestamp()
-            // Returning fake fresh data
-            // user.createdAt = Date.now() - (1000 * 60 * 60 * 24 * 3) // 3 days ago
-            return user
-        })
-        return users
-    } catch (err) {
-        logger.error('cannot find users', err)
-        throw err
-    }
-}
+
 
 async function getByIdUser(userId) {
     try {
         const collection = await dbService.getCollection('posts')
-        const userPosts = await collection.find({ 'userId': ObjectId(userId) }) 
+        const userPosts = await collection.find({ 'userId': ObjectId(userId) })
         return userPosts
     } catch (err) {
         logger.error(`while finding user ${userId}`, err)
@@ -65,34 +49,27 @@ async function remove(postId) {
     }
 }
 
-async function update(user) {
+//update a post
+async function update(post) {
     try {
         // peek only updatable fields!
-        const userToSave = {
-            id: user._id,
-            username: user.username,
-            password: user.password,
-            mail: user.mail,
-            profilePicture: user.profilePicture,
-            coverPicture: user.coverPicture,
-            followers: user.followers,
-            followings: user.followings,
-            isAdmin: user.isAdmin,
-            desc: user.desc,
-            city: user.city,
-            from: user.from,
-            relationship: 'signal',
-            timestamp: new Date(),
-            isActive: true
+        const postToUpdate = {
+            userId: post.userId,
+            desc: post.desc,
+            img: post.img,
+            likes: post.likes,
+            timestamp: new Date.now()
         }
-        const collection = await dbService.getCollection('user')
-        await collection.updateOne({ '_id': userToSave._id }, { $set: userToSave })
-        return userToSave;
+        const collection = await dbService.getCollection('post')
+        await collection.updateOne({ '_id': post._id }, { $set: postToUpdate })
+        return postToUpdate;
     } catch (err) {
-        logger.error(`cannot update user ${user._id}`, err)
+        logger.error(`cannot update user ${post._id}`, err)
         throw err
     }
 }
+
+//add a post
 
 async function add(post) {
     try {
@@ -113,23 +90,29 @@ async function add(post) {
     }
 }
 
-function _buildCriteria(filterBy) {
-    const criteria = {}
-    if (filterBy.txt) {
-        const txtCriteria = { $regex: filterBy.txt, $options: 'i' }
-        criteria.$or = [
-            {
-                username: txtCriteria
-            },
-            {
-                fullname: txtCriteria
-            }
-        ]
+
+//like 
+
+async function addLike(post, userId) {
+    try {
+        const collection = await dbService.getCollection('posts');
+        collection.updateOne({ '_id': post._id }, { $push: { likes: userId } });
+        post.likes.push(userId);
+    } catch (err) {
+        logger.error(`cannot add like to post ${post._id}`, err)
+        throw err
     }
-    if (filterBy.minBalance) {
-        criteria.score = { $gte: filterBy.minBalance }
-    }
-    return criteria
 }
 
 
+
+async function removeLike(post, userId) {
+    try {
+        const collection = await dbService.getCollection('posts');
+        const updatePost = await collection.updateOne({ '_id': post._id }, { $pull: { likes: userId } })
+        return updatePost;
+    } catch (err) {
+        logger.error(`cannot remove post ${post._id}`, err)
+        throw err
+    }
+}
